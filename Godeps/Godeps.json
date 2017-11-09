@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/lnsp/webchat",
+	"GoVersion": "go1.9",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/moby/moby/pkg/namesgenerator",
+			"Comment": "docs-v1.12.0-rc4-2016-07-15-8119-ga4bdb304e",
+			"Rev": "a4bdb304e29f21661e8ef398dbaeb8188aa0f46a"
+		},
+		{
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "66aacef3dd8a676686c7ae3716979581e8b03c47"
+		}
+	]
+}
