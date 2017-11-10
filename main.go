@@ -153,12 +153,24 @@ func (user *User) Send(msg Message) error {
 	return websocket.JSON.Send(user.Conn, msg)
 }
 
+func Capitalize(s ...string) []string {
+	if len(s) == 1 {
+		p := s[0]
+		if len(p) > 1 {
+			return []string{strings.ToUpper(p[:1]) + p[1:]}
+		}
+		return []string{strings.ToUpper(p)}
+	}
+	for i, p := range s {
+		s[i] = Capitalize(p)[0]
+	}
+	return s
+}
+
 func NewUser(conn *websocket.Conn) *User {
 	name := namesgenerator.GetRandomName(0)
-	name = strings.Replace(name, "_", " ", 1)
-	name = strings.ToUpper(name[:1]) + name[1:]
 	return &User{
-		Name: name,
+		Name: strings.Join(Capitalize(strings.Split(name, "_")...), " "),
 		Conn: conn,
 	}
 }
