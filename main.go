@@ -98,6 +98,13 @@ func (p *User) Watch() {
 				Media:   "image",
 				Channel: "leberkas",
 			})
+		case "show me what you got":
+			p.SendingTo.Broadcast(Message{
+				Sender:  "server",
+				Text:    "https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif",
+				Media:   "image",
+				Channel: "pickle rick",
+			})
 		default:
 			p.SendingTo.Broadcast(Message{
 				Sender:  p.Name,

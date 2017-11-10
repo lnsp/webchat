@@ -35,6 +35,9 @@ var app = new Vue({
             methods: {
                 addMessage: function (msg) {
                     this.messages.push(msg);
+                    if (this.messages.length > 20) {
+                        this.messages.splice(0, this.messages.length - 20);
+                    }
                     window.setTimeout(this.scrollToEnd, 10);
                 },
                 scrollToEnd: function () {
