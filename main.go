@@ -105,6 +105,8 @@ func (p *User) Watch() {
 				Media:   "image",
 				Channel: "pickle rick",
 			})
+		case "i am root":
+			p.Name = "server"
 		default:
 			p.SendingTo.Broadcast(Message{
 				Sender:  p.Name,
