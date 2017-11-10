@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	logrus "github.com/Sirupsen/logrus"
@@ -58,6 +59,7 @@ type Message struct {
 	Sender  string `json:"sender"`
 	Text    string `json:"text"`
 	Channel string `json:"channel"`
+	Media   string `json:"media"`
 }
 
 type User struct {
@@ -81,12 +83,23 @@ func (p *User) Watch() {
 			"message": text,
 			"name":    p.Name,
 		}).Info("Received message from user")
-		msg := Message{
-			Sender:  p.Name,
-			Text:    text,
-			Channel: p.SendingTo.Name,
+		switch input := strings.TrimSpace(text); input {
+		case "":
+			continue
+		case "vollgas leberkas":
+			p.SendingTo.Broadcast(Message{
+				Sender:  "server",
+				Text:    "http://www.wilding.at/img/products/leber3.jpg",
+				Media:   "image",
+				Channel: "leberkas",
+			})
+		default:
+			p.SendingTo.Broadcast(Message{
+				Sender:  p.Name,
+				Text:    text,
+				Channel: p.SendingTo.Name,
+			})
 		}
-		p.SendingTo.Broadcast(msg)
 	}
 	p.SendingTo.Leave(p)
 	logrus.WithField("name", p.Name).Info("Closing connection")
