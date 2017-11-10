@@ -18,13 +18,25 @@ const maxCharLimit = 120
 
 type Action func(channel *Channel, user *User, data string)
 
-func actionTumlerTaxi(channel *Channel, user *User, data string) {
-	channel.Broadcast(Message{
-		Sender:  user.Name,
-		Data:    "https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg",
-		Media:   "image",
-		Channel: channel.Name,
-	})
+func actionTumlerTaxi(interval time.Duration) Action {
+	var lastLeberkas time.Time
+	return func(channel *Channel, user *User, data string) {
+		if time.Since(lastLeberkas) < interval {
+			user.Send(Message{
+				Sender:  serverName,
+				Data:    "Your last Leberkas! Leben am Limit.",
+				Channel: channel.Name,
+			})
+		} else {
+			lastLeberkas = time.Now()
+			channel.Broadcast(Message{
+				Sender:  user.Name,
+				Data:    "https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg",
+				Media:   "image",
+				Channel: channel.Name,
+			})
+		}
+	}
 }
 
 func actionShowMe(channel *Channel, user *User, data string) {
@@ -187,7 +199,7 @@ func main() {
 	mainChannel := NewChannel("main")
 	mainChannel.Add("!vollgas", actionLeberkas)
 	mainChannel.Add("!show", actionShowMe)
-	mainChannel.Add("!tumbwl", actionTumlerTaxi)
+	mainChannel.Add("!tumbwl", actionTumlerTaxi(time.Minute))
 
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/chat/", websocket.Handler(func(conn *websocket.Conn) {
