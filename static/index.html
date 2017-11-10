@@ -25,7 +25,7 @@
                     <b>{{ msg.sender }}</b>
                 </div>
                 <div class="message-text col p-1 pl-2">
-                    <img v-if="msg.media === 'image'" v-bind:src="msg.text">
+                    <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.text">
                     <a v-else-if="msg.media === 'url'" v-bind:href="msg.text">{{ msg.text }}</a>
                     <p v-else>{{ msg.text }}</p>
                 </div>
