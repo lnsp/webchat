@@ -11,6 +11,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const priorityLow = "muted"
+const serverName = "WebChat"
 const timInterval = 50 * time.Millisecond
 const maxCharLimit = 120
 
@@ -18,17 +20,17 @@ type Action func(channel *Channel, user *User, data string)
 
 func actionTumlerTaxi(channel *Channel, user *User, data string) {
 	channel.Broadcast(Message{
-		Sender:  "server",
-		Text:    "https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg",
+		Sender:  user.Name,
+		Data:    "https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg",
 		Media:   "image",
-		Channel: "TumBWL",
+		Channel: channel.Name,
 	})
 }
 
 func actionShowMe(channel *Channel, user *User, data string) {
 	channel.Broadcast(Message{
-		Sender:  "server",
-		Text:    "https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif",
+		Sender:  user.Name,
+		Data:    "https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif",
 		Media:   "image",
 		Channel: channel.Name,
 	})
@@ -36,8 +38,8 @@ func actionShowMe(channel *Channel, user *User, data string) {
 
 func actionLeberkas(channel *Channel, user *User, data string) {
 	channel.Broadcast(Message{
-		Sender:  "server",
-		Text:    "http://www.wilding.at/img/products/leber3.jpg",
+		Sender:  user.Name,
+		Data:    "http://www.wilding.at/img/products/leber3.jpg",
 		Media:   "image",
 		Channel: channel.Name,
 	})
@@ -57,7 +59,7 @@ func (c *Channel) Broadcast(msg Message) {
 	logrus.WithFields(logrus.Fields{
 		"channel": c.Name,
 		"sender":  msg.Sender,
-		"message": msg.Text,
+		"message": msg.Data,
 	}).Info("Broadcasting message to users")
 	for _, p := range c.Participants {
 		p.Send(msg)
@@ -71,9 +73,10 @@ func (c *Channel) Join(u *User) {
 	}).Info("User joined channel")
 	c.Participants[u.Name] = u
 	c.Broadcast(Message{
-		Sender:  "server",
-		Text:    u.Name + " joined the channel",
-		Channel: c.Name,
+		Sender:   serverName,
+		Data:     u.Name + " joined the channel",
+		Channel:  c.Name,
+		Priority: priorityLow,
 	})
 }
 
@@ -84,17 +87,19 @@ func (c *Channel) Leave(u *User) {
 	}).Info("User left channel")
 	delete(c.Participants, u.Name)
 	c.Broadcast(Message{
-		Sender:  "server",
-		Text:    u.Name + " left the channel",
-		Channel: c.Name,
+		Sender:   serverName,
+		Data:     u.Name + " left the channel",
+		Channel:  c.Name,
+		Priority: priorityLow,
 	})
 }
 
 type Message struct {
-	Sender  string `json:"sender"`
-	Text    string `json:"text"`
-	Channel string `json:"channel"`
-	Media   string `json:"media"`
+	Sender   string `json:"sender"`
+	Data     string `json:"data"`
+	Priority string `json:"priority"`
+	Channel  string `json:"channel"`
+	Media    string `json:"media"`
 }
 
 type User struct {
@@ -136,7 +141,7 @@ func (user *User) Watch() {
 		}
 		user.SendingTo.Broadcast(Message{
 			Sender:  user.Name,
-			Text:    text,
+			Data:    text,
 			Channel: user.SendingTo.Name,
 		})
 	}
@@ -149,8 +154,11 @@ func (user *User) Send(msg Message) error {
 }
 
 func NewUser(conn *websocket.Conn) *User {
+	name := namesgenerator.GetRandomName(0)
+	name = strings.Replace(name, "_", " ", 1)
+	name = strings.ToUpper(name[:1]) + name[1:]
 	return &User{
-		Name: namesgenerator.GetRandomName(0),
+		Name: name,
 		Conn: conn,
 	}
 }
