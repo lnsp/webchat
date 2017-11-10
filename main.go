@@ -16,6 +16,15 @@ const maxCharLimit = 120
 
 type Action func(channel *Channel, user *User, data string)
 
+func actionTumlerTaxi(channel *Channel, user *User, data string) {
+	channel.Broadcast(Message{
+		Sender:  "server",
+		Text:    "https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg",
+		Media:   "image",
+		Channel: "TumBWL",
+	})
+}
+
 func actionShowMe(channel *Channel, user *User, data string) {
 	channel.Broadcast(Message{
 		Sender:  "server",
@@ -158,6 +167,7 @@ func main() {
 	mainChannel := NewChannel("main")
 	mainChannel.Add("/vollgas", actionLeberkas)
 	mainChannel.Add("/showme", actionShowMe)
+	mainChannel.Add("/tumbwl", actionTumlerTaxi)
 
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/chat/", websocket.Handler(func(conn *websocket.Conn) {
