@@ -3,11 +3,14 @@ package main
 import (
 	"net/http"
 	"os"
+	"time"
 
 	logrus "github.com/Sirupsen/logrus"
 	"github.com/moby/moby/pkg/namesgenerator"
 	"golang.org/x/net/websocket"
 )
+
+const timInterval = 10 * time.Millisecond
 
 type Channel struct {
 	Participants map[string]*User
@@ -66,7 +69,11 @@ type User struct {
 func (p *User) Watch() {
 	logrus.WithField("name", p.Name).Info("Watching user input")
 	var text string
+	var lastMessage time.Time
 	for {
+		if interval := time.Since(lastMessage); interval < timInterval {
+			time.Sleep(timInterval - interval)
+		}
 		if err := websocket.Message.Receive(p.Conn, &text); err != nil {
 			break
 		}
