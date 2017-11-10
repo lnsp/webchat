@@ -1,4 +1,8 @@
-var server = "ws://" + location.host + "/chat/";
+var protocol = "ws://"
+if (location.protocol === "https") {
+    protocol = "wss://"
+}
+var server = protocol + location.host + "/chat/";
 var socket = null;
 window.onload = function () {
     socket = new WebSocket(server);
