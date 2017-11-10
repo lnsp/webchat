@@ -4,6 +4,11 @@
 	"GodepVersion": "v79",
 	"Deps": [
 		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.11.0-35-g61e43dc",
+			"Rev": "61e43dc76f7ee59a82bdf3d71033dc12bea4c77d"
+		},
+		{
 			"ImportPath": "github.com/moby/moby/pkg/namesgenerator",
 			"Comment": "docs-v1.12.0-rc4-2016-07-15-8119-ga4bdb304e",
 			"Rev": "a4bdb304e29f21661e8ef398dbaeb8188aa0f46a"
@@ -11,6 +16,10 @@
 		{
 			"ImportPath": "golang.org/x/net/websocket",
 			"Rev": "66aacef3dd8a676686c7ae3716979581e8b03c47"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "4b45465282a4624cf39876842a017334f13b8aff"
 		}
 	]
 }
