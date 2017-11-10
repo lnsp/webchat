@@ -17,11 +17,14 @@
             <hr>
         </div>
         <div class="container chat-history">
-            <div class="row" v-for="msg in messages">
+            <div class="row message-block align-items-center" v-for="msg in messages">
+                <div class="message-channel col-md-1">
+                    <span class="badge badge-primary">{{ msg.channel }}</span>
+                </div>
                 <div class="message-sender col-md-3 p-1" v-bind:class="{'text-primary': msg.sender != 'server', 'text-danger': msg.sender === 'server'}">
                     <b>{{ msg.sender }}</b>
                 </div>
-                <div class="col p-1 pl-2">{{ msg.text }}</div>
+                <div class="message-text col p-1 pl-2">{{ msg.text }}</div>
             </div>
         </div>
         <div>
