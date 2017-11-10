@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const timInterval = 10 * time.Millisecond
+const timInterval = 100 * time.Millisecond
 
 type Channel struct {
 	Participants map[string]*User
