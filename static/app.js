@@ -1,5 +1,5 @@
 var protocol = "ws://"
-if (location.protocol === "https") {
+if (location.protocol === "https:") {
     protocol = "wss://"
 }
 var server = protocol + location.host + "/chat/";
