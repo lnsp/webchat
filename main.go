@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const timInterval = 100 * time.Millisecond
+const timInterval = 10 * time.Millisecond
 
 type Channel struct {
 	Participants map[string]*User
@@ -79,6 +79,7 @@ func (p *User) Watch() {
 		if err := websocket.Message.Receive(p.Conn, &text); err != nil {
 			break
 		}
+		lastMessage = time.Now()
 		logrus.WithFields(logrus.Fields{
 			"message": text,
 			"name":    p.Name,
