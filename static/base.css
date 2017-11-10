@@ -30,6 +30,10 @@
     flex: 0 1 auto;
 }
 
+.message-text {
+    word-wrap: break-word;
+}
+
 [v-cloak] {
     display: none;
 }
