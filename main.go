@@ -11,12 +11,37 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const timInterval = 10 * time.Millisecond
+const timInterval = 50 * time.Millisecond
 const maxCharLimit = 120
 
+type Action func(channel *Channel, user *User, data string)
+
+func actionShowMe(channel *Channel, user *User, data string) {
+	channel.Broadcast(Message{
+		Sender:  "server",
+		Text:    "https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif",
+		Media:   "image",
+		Channel: channel.Name,
+	})
+}
+
+func actionLeberkas(channel *Channel, user *User, data string) {
+	channel.Broadcast(Message{
+		Sender:  "server",
+		Text:    "http://www.wilding.at/img/products/leber3.jpg",
+		Media:   "image",
+		Channel: channel.Name,
+	})
+}
+
 type Channel struct {
+	Actions      map[string]Action
 	Participants map[string]*User
 	Name         string
+}
+
+func (c *Channel) Add(command string, action Action) {
+	c.Actions[command] = action
 }
 
 func (c *Channel) Broadcast(msg Message) {
@@ -69,58 +94,49 @@ type User struct {
 	SendingTo *Channel
 }
 
-func (p *User) Watch() {
-	logrus.WithField("name", p.Name).Info("Watching user input")
+func (user *User) Watch() {
+	logrus.WithField("name", user.Name).Info("Watching user input")
 	var text string
 	var lastMessage time.Time
 	for {
-		if err := websocket.Message.Receive(p.Conn, &text); err != nil {
+		if err := websocket.Message.Receive(user.Conn, &text); err != nil {
 			break
 		}
+		// filter out spam
 		if interval := time.Since(lastMessage); interval < timInterval {
 			continue
 		}
 		lastMessage = time.Now()
+		// filter our too long messages
 		if len(text) > maxCharLimit {
 			continue
 		}
 		logrus.WithFields(logrus.Fields{
 			"message": text,
-			"name":    p.Name,
+			"name":    user.Name,
 		}).Info("Received message from user")
-		switch input := strings.TrimSpace(text); input {
-		case "":
+		// filter out short messages
+		text = strings.TrimSpace(text)
+		if len(text) < 1 {
 			continue
-		case "vollgas leberkas":
-			p.SendingTo.Broadcast(Message{
-				Sender:  "server",
-				Text:    "http://www.wilding.at/img/products/leber3.jpg",
-				Media:   "image",
-				Channel: "leberkas",
-			})
-		case "show me what you got":
-			p.SendingTo.Broadcast(Message{
-				Sender:  "server",
-				Text:    "https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif",
-				Media:   "image",
-				Channel: "pickle rick",
-			})
-		case "i am root":
-			p.Name = "server"
-		default:
-			p.SendingTo.Broadcast(Message{
-				Sender:  p.Name,
-				Text:    text,
-				Channel: p.SendingTo.Name,
-			})
 		}
+		command := strings.SplitN(text, " ", 2)
+		if action, ok := user.SendingTo.Actions[command[0]]; ok {
+			action(user.SendingTo, user, command[len(command)-1])
+			continue
+		}
+		user.SendingTo.Broadcast(Message{
+			Sender:  user.Name,
+			Text:    text,
+			Channel: user.SendingTo.Name,
+		})
 	}
-	p.SendingTo.Leave(p)
-	logrus.WithField("name", p.Name).Info("Closing connection")
+	user.SendingTo.Leave(user)
+	logrus.WithField("name", user.Name).Info("Closing connection")
 }
 
-func (p *User) Send(msg Message) error {
-	return websocket.JSON.Send(p.Conn, msg)
+func (user *User) Send(msg Message) error {
+	return websocket.JSON.Send(user.Conn, msg)
 }
 
 func NewUser(conn *websocket.Conn) *User {
@@ -134,11 +150,15 @@ func NewChannel(name string) *Channel {
 	return &Channel{
 		Name:         name,
 		Participants: map[string]*User{},
+		Actions:      map[string]Action{},
 	}
 }
 
 func main() {
 	mainChannel := NewChannel("main")
+	mainChannel.Add("/vollgas", actionLeberkas)
+	mainChannel.Add("/showme", actionShowMe)
+
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/chat/", websocket.Handler(func(conn *websocket.Conn) {
 		logrus.WithField("remote", conn.RemoteAddr()).Info("Connected with client")
