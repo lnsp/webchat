@@ -2,38 +2,45 @@
 
 <head>
     <title>WebChat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb"
         crossorigin="anonymous">
     <link rel="stylesheet" href="/base.css">
 </head>
 
 <body>
-    <div class="container mt-3" id="app">
-        <h1>WebChat
-            <small class="text-muted">v1.0.0</small>
-        </h1>
-        <hr>
-        <p>
+    <div class="pt-3 app-body" id="app">
+        <div class="container">
+            <h1>WebChat
+                <small class="text-muted">v1.0.0</small>
+            </h1>
+            <hr>
+        </div>
+        <div class="container chat-history">
             <div class="row" v-for="msg in messages">
-                <div class="message-sender col-md-2" v-bind:class="{'text-primary': msg.sender != 'server', 'text-danger': msg.sender === 'server'}">
+                <div class="message-sender col-md-3 p-1" v-bind:class="{'text-primary': msg.sender != 'server', 'text-danger': msg.sender === 'server'}">
                     <b>{{ msg.sender }}</b>
                 </div>
-                <div class="col">{{ msg.text }}</div>
+                <div class="col p-1 pl-2">{{ msg.text }}</div>
             </div>
-        </p>
-        <hr>
-        <form onsubmit="return send();" action="">
-            <div class="row">
-                <div class="col-md-10">
-                    <div class="form-group">
-                        <input id="message" autocomplete="off" class="form-control" placeholder="hello, world" type="text">
+        </div>
+        <div>
+            <hr>
+        </div>
+        <div class="container message-input">
+            <form onsubmit="return send();" action="">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="form-group">
+                            <input id="message" autocomplete="off" class="form-control" type="text">
+                        </div>
+                    </div>
+                    <div class="hidden-md col-md-2">
+                        <button type="button" class="btn btn-primary btn-block" onclick="send();">Send</button>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-primary btn-block" onclick="send();">Send</button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
     <script src="https://unpkg.com/vue"></script>
     <script type="text/javascript" src="/app.js"></script>

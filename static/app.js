@@ -9,12 +9,7 @@ window.onload = function () {
         console.log("connection closed (" + e.code + ")");
     }
     socket.onmessage = function (event) {
-        var message = JSON.parse(event.data);
-        app.messages.push(message);
-
-        if (app.messages.length > 20) {
-            app.messages.splice(0, app.messages.length - 20);
-        }
+        app.addMessage(JSON.parse(event.data));
     }
 }
 
@@ -29,8 +24,18 @@ function send() {
 }
 
 var app = new Vue({
-    el: "#app",
-    data: {
-        messages: [],
-    }
+            el: "#app",
+            data: {
+                messages: [],
+            },
+            methods: {
+                addMessage: function (msg) {
+                    this.messages.push(msg);
+                    window.setTimeout(this.scrollToEnd, 10);
+                },
+                scrollToEnd: function () {
+                    var container = this.$el.querySelector(".chat-history");
+                    container.scrollTop = container.scrollHeight;
+                },
+            },
 });

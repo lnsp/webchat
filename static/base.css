@@ -1,3 +1,31 @@
 .message-sender {
-    border-right: 1px solid black;
+    border-right: 1px solid #d1d1d1;
+}
+
+.app-body {
+    display: flex;
+    height: 100%;
+    flex-flow: column;
+}
+
+.chat-history {
+    overflow-y: scroll;
+    flex: 1 1 auto;
+    padding: 1em;
+}
+
+.chat-history::-webkit-scrollbar { 
+    display: none; 
+}
+
+.chat-history::-ms-scrollbar { 
+    display: none; 
+}
+
+.chat-history::-moz-scrollbar { 
+    display: none; 
+}
+
+.message-input {
+    flex: 0 1 auto;
 }
