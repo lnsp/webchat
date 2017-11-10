@@ -18,13 +18,13 @@
         </div>
         <div class="container chat-history" v-cloak>
             <div class="row message-block align-items-center" v-for="msg in messages">
-                <div class="message-channel col-md-1">
+                <div class="message-channel col-3 col-md-2">
                     <span class="badge badge-primary">{{ msg.channel }}</span>
                 </div>
-                <div class="message-sender col-md-3 p-1" v-bind:class="['text-' + msg.priority]">
+                <div class="message-sender col-9 col-md-3 p-1" v-bind:class="['text-' + msg.priority]">
                     <b>{{ msg.sender }}</b>
                 </div>
-                <div class="message-text col p-1 pl-2">
+                <div class="message-text col p-1 pl-3">
                     <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.data">
                     <a v-else-if="msg.media === 'url'" v-bind:href="msg.text">{{ msg.data }}</a>
                     <span v-else v-bind:class="['text-' + msg.priority]">{{ msg.data }}</span>
