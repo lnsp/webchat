@@ -39,6 +39,7 @@ var app = new Vue({
                         this.messages.splice(0, this.messages.length - 20);
                     }
                     window.setTimeout(this.scrollToEnd, 10);
+                    window.setTimeout(this.scrollToEnd, 100);
                 },
                 scrollToEnd: function () {
                     var container = this.$el.querySelector(".chat-history");
