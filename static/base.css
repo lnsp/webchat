@@ -29,3 +29,7 @@
 .message-input {
     flex: 0 1 auto;
 }
+
+[v-cloak] {
+    display: none;
+}

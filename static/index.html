@@ -16,18 +16,18 @@
             </h1>
             <hr>
         </div>
-        <div class="container chat-history">
+        <div class="container chat-history" v-cloak>
             <div class="row message-block align-items-center" v-for="msg in messages">
                 <div class="message-channel col-md-1">
                     <span class="badge badge-primary">{{ msg.channel }}</span>
                 </div>
-                <div class="message-sender col-md-3 p-1" v-bind:class="{'text-primary': msg.sender != 'server', 'text-danger': msg.sender === 'server'}">
+                <div class="message-sender col-md-3 p-1" v-bind:class="['text-' + msg.priority]">
                     <b>{{ msg.sender }}</b>
                 </div>
                 <div class="message-text col p-1 pl-2">
-                    <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.text">
-                    <a v-else-if="msg.media === 'url'" v-bind:href="msg.text">{{ msg.text }}</a>
-                    <span v-else>{{ msg.text }}</span>
+                    <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.data">
+                    <a v-else-if="msg.media === 'url'" v-bind:href="msg.text">{{ msg.data }}</a>
+                    <span v-else v-bind:class="['text-' + msg.priority]">{{ msg.data }}</span>
                 </div>
             </div>
         </div>
