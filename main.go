@@ -12,6 +12,7 @@ import (
 )
 
 const timInterval = 10 * time.Millisecond
+const maxCharLimit = 120
 
 type Channel struct {
 	Participants map[string]*User
@@ -73,13 +74,16 @@ func (p *User) Watch() {
 	var text string
 	var lastMessage time.Time
 	for {
-		if interval := time.Since(lastMessage); interval < timInterval {
-			time.Sleep(timInterval - interval)
-		}
 		if err := websocket.Message.Receive(p.Conn, &text); err != nil {
 			break
 		}
+		if interval := time.Since(lastMessage); interval < timInterval {
+			continue
+		}
 		lastMessage = time.Now()
+		if len(text) > maxCharLimit {
+			continue
+		}
 		logrus.WithFields(logrus.Fields{
 			"message": text,
 			"name":    p.Name,
