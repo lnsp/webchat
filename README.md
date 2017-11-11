@@ -1,6 +1,6 @@
 # webchat
 
-*webchat* is a single-instance chat service without persistency. The chat history is not stored or cached on the server. *webchat* functions as a simple relay that includes configurable actions between the clients. It uses WebSockets to communicate fast and securely.
+*webchat* is a scalable chat service without persistency. It uses RabbitMQ to communicate between each frontend instance. The chat history is neither stored nor cached on the server. *webchat* functions as a simple relay that includes configurable actions between the clients. It uses WebSockets to communicate fast and securely.
 
 It can be configured using a simple *config.yaml* file, an example can be found in the repository.
 
