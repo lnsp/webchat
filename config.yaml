@@ -2,6 +2,7 @@ general:
   motd: "Welcome to WebChat. Use !help for further information."
   characterLimit: 140
   messageInterval: 50
+  mainChannel: main
 channels: [main]
 actions:
   - tag: vollgas
