@@ -26,7 +26,7 @@
                 </div>
                 <div class="message-text col p-1 pl-3">
                     <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.data">
-                    <a v-else-if="msg.media === 'url'" v-bind:href="msg.text">{{ msg.data }}</a>
+                    <a v-else-if="msg.media === 'url'" v-bind:href="msg.data">{{ msg.data }}</a>
                     <span v-else v-bind:class="['text-' + msg.priority]">{{ msg.data }}</span>
                 </div>
             </div>
