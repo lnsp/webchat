@@ -28,22 +28,21 @@ function send() {
 }
 
 var app = new Vue({
-            el: "#app",
-            data: {
-                messages: [],
-            },
-            methods: {
-                addMessage: function (msg) {
-                    this.messages.push(msg);
-                    if (this.messages.length > 20) {
-                        this.messages.splice(0, this.messages.length - 20);
-                    }
-                    window.setTimeout(this.scrollToEnd, 10);
-                    window.setTimeout(this.scrollToEnd, 100);
-                },
-                scrollToEnd: function () {
-                    var container = this.$el.querySelector(".chat-history");
-                    container.scrollTop = container.scrollHeight;
-                },
-            },
+    el: "#app",
+    data: {
+        messages: [],
+    },
+    methods: {
+        addMessage: function (msg) {
+            this.messages.push(msg);
+            if (this.messages.length > 20) {
+                this.messages.splice(0, this.messages.length - 20);
+            }
+            window.setTimeout(this.scrollToEnd, 10);
+        },
+        scrollToEnd: function () {
+            var container = this.$el.querySelector(".chat-history");
+            container.scrollTop = container.scrollHeight;
+        },
+    },
 });
