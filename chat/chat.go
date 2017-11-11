@@ -1,12 +1,18 @@
 package chat
 
 import (
+	"encoding/hex"
+	"encoding/json"
+	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/moby/moby/pkg/namesgenerator"
+	"github.com/pkg/errors"
+	"github.com/streadway/amqp"
 	"golang.org/x/net/websocket"
 )
 
@@ -19,8 +25,11 @@ const (
 )
 
 const (
-	PriorityHigh = "primary"
-	PriorityLow  = "muted"
+	PriorityHigh  = "primary"
+	PriorityLow   = "muted"
+	exchangeName  = "chat"
+	queuePrefix   = exchangeName + "."
+	queueWildcard = queuePrefix + "*"
 )
 
 type Message struct {
@@ -39,7 +48,17 @@ type Channel struct {
 	participants map[string]*User
 }
 
-func (c *Channel) Broadcast(msg Message) {
+func (c *Channel) Publish(msg Message) {
+	c.host.publish(Message{
+		Channel:  c.Name,
+		Data:     msg.Data,
+		Sender:   msg.Sender,
+		Media:    msg.Media,
+		Priority: msg.Priority,
+	})
+}
+
+func (c *Channel) broadcast(msg Message) {
 	logrus.WithFields(logrus.Fields{
 		"channel": c.Name,
 		"sender":  msg.Sender,
@@ -56,7 +75,7 @@ func (c *Channel) Join(u *User) {
 		"user":    u.Name,
 	}).Info("User joined channel")
 	c.participants[u.Name] = u
-	c.Broadcast(Message{
+	c.Publish(Message{
 		Sender:   c.host.Name,
 		Data:     u.Name + " joined the channel",
 		Channel:  c.Name,
@@ -70,7 +89,7 @@ func (c *Channel) Leave(u *User) {
 		"user":    u.Name,
 	}).Info("User left channel")
 	delete(c.participants, u.Name)
-	c.Broadcast(Message{
+	c.Publish(Message{
 		Sender:   c.host.Name,
 		Data:     u.Name + " left the channel",
 		Channel:  c.Name,
@@ -123,7 +142,7 @@ func (user *User) Watch() {
 			}
 			continue
 		}
-		user.active.Broadcast(Message{
+		user.active.Publish(Message{
 			Sender:  user.Name,
 			Data:    text,
 			Channel: user.active.Name,
@@ -173,14 +192,16 @@ func NewChannel(name string, host *Server) *Channel {
 type Server struct {
 	Name         string
 	motd         string
-	channels     []*Channel
+	channels     map[string]*Channel
 	textInterval time.Duration
 	textLimit    int
 	actions      map[string]Action
+	broker       *amqp.Connection
+	mainChannel  string
 }
 
 func (s *Server) AddChannel(channel *Channel) {
-	s.channels = append(s.channels, channel)
+	s.channels[channel.Name] = channel
 }
 
 func (s *Server) AddAction(tag string, action Action) {
@@ -205,21 +226,153 @@ func (s *Server) Accept(conn *websocket.Conn) {
 	})
 	if len(s.channels) < 1 {
 		s.AddChannel(NewChannel(defaultChannelName, s))
+		s.mainChannel = defaultChannelName
 	}
-	main := s.channels[0]
+	main := s.channels[s.mainChannel]
 	user.active = main
 	main.Join(user)
 }
 
 func (s *Server) Handler() http.Handler {
+	if s.broker == nil {
+		logrus.Fatal("Not connected to message queue")
+	}
 	return websocket.Handler(s.Accept)
 }
 
+func (s *Server) publish(msg Message) {
+	ch, err := s.broker.Channel()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"broker": s.broker.LocalAddr(),
+		}).Warn("Failed to open channel")
+		return
+	}
+	defer ch.Close()
+	bytes, err := json.Marshal(msg)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"channel": msg.Channel,
+			"sender":  msg.Sender,
+		}).Warn("Could not marshal message")
+		return
+	}
+	if err := ch.Publish(exchangeName, queueWildcard, false, false, amqp.Publishing{
+		ContentType: "application/json",
+		Body:        bytes,
+	}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"broker": s.broker.LocalAddr(),
+			"queue":  queuePrefix + "*",
+		}).Warn("Could not publish message")
+	}
+}
+
+func (s *Server) route(msg Message) {
+	channel, ok := s.channels[msg.Channel]
+	if !ok {
+		logrus.WithFields(logrus.Fields{
+			"channel": msg.Channel,
+			"sender":  msg.Sender,
+		}).Warn("Could not route message")
+		return
+	}
+	channel.broadcast(msg)
+}
+
+func (s *Server) consumeLoop() {
+	host, err := os.Hostname()
+	if err != nil {
+		// generate random bytes instead
+		rand.Seed(time.Now().Unix())
+		var randBytes [8]byte
+		rand.Read(randBytes[:])
+		host = hex.EncodeToString(randBytes[:])
+	}
+
+	ch, err := s.broker.Channel()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"err":    err,
+			"broker": s.broker.LocalAddr(),
+		}).Fatal("Could not open channel")
+	}
+
+	if err := ch.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"exchange": exchangeName,
+			"err":      err,
+		}).Fatal("Could not declare exchange")
+	}
+	logrus.WithFields(logrus.Fields{
+		"exchange": exchangeName,
+	}).Info("Declared chat exchange")
+
+	queue, err := ch.QueueDeclare(queuePrefix+host, false, false, false, false, nil)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"err":    err,
+			"broker": s.broker.LocalAddr(),
+			"name":   host,
+		}).Fatal("Could not declare queue")
+	}
+	logrus.WithFields(logrus.Fields{
+		"queue": queue.Name,
+	}).Info("Declared public queue")
+
+	if err := ch.QueueBind(queue.Name, queueWildcard, exchangeName, false, nil); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"err":    err,
+			"broker": s.broker.LocalAddr(),
+			"name":   host,
+		}).Fatal("Could not bind queue to exchange")
+	}
+
+	for {
+		incoming, err := ch.Consume(queue.Name, "", true, false, false, false, nil)
+		if err != nil {
+			ch.Close()
+			ch, err = s.broker.Channel()
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"err":    err,
+					"broker": s.broker.LocalAddr(),
+				}).Fatal("Could not open channel")
+			}
+		}
+		for payload := range incoming {
+			var msg Message
+			if err := json.Unmarshal(payload.Body, &msg); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"id":    payload.MessageId,
+					"queue": queue.Name,
+				}).Warn("Failed to consume message")
+				continue
+			}
+			go s.route(msg)
+		}
+	}
+}
+
+func (s *Server) Connect(broker string) error {
+	conn, err := amqp.Dial(broker)
+	if err != nil {
+		return errors.Wrap(err, "Could not init server")
+	}
+	logrus.WithFields(logrus.Fields{
+		"broker": broker,
+	}).Info("Connected to message queue")
+	s.broker = conn
+	go s.consumeLoop()
+	return nil
+}
+
 func New(options ...Option) *Server {
+	rand.Seed(time.Now().Unix())
 	server := &Server{
 		Name:         defaultServerName,
 		motd:         defaultMOTD,
-		channels:     []*Channel{},
+		channels:     map[string]*Channel{},
 		textInterval: defaultTextInterval,
 		textLimit:    defaultTextLimit,
 		actions:      map[string]Action{},
@@ -240,9 +393,8 @@ func WithName(name string) Option {
 
 func WithChannels(names ...string) Option {
 	return func(s *Server) {
-		s.channels = make([]*Channel, len(names))
-		for i, n := range names {
-			s.channels[i] = NewChannel(n, s)
+		for _, n := range names {
+			s.AddChannel(NewChannel(n, s))
 		}
 	}
 }
@@ -268,5 +420,11 @@ func WithTextLimit(limit int) Option {
 func WithTextInterval(interval time.Duration) Option {
 	return func(s *Server) {
 		s.textInterval = interval
+	}
+}
+
+func WithMainChannel(name string) Option {
+	return func(s *Server) {
+		s.mainChannel = name
 	}
 }

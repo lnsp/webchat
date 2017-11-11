@@ -27,6 +27,12 @@ func main() {
 		server = chat.New()
 		logrus.Info("Using default configuration")
 	}
+	if err := server.Connect(os.Getenv("RABBITMQ_URL")); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"url": os.Getenv("RABBITMQ_URL"),
+			"err": err,
+		}).Fatal("Could not connect to message broker")
+	}
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/chat/", server.Handler())
 	http.ListenAndServe(":"+os.Getenv("PORT"), nil)

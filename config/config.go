@@ -29,6 +29,7 @@ type Chat struct {
 		MOTD            string `yaml:"motd"`
 		CharacterLimit  int    `yaml:"characterLimit"`
 		MessageInterval int    `yaml:"messageInterval"`
+		MainChannel     string `yaml:"mainChannel"`
 	}
 }
 
@@ -44,6 +45,7 @@ func Build(file string) (*chat.Server, error) {
 	server := chat.New(
 		chat.WithName(config.General.Name),
 		chat.WithMOTD(config.General.MOTD),
+		chat.WithMainChannel(config.General.MainChannel),
 		chat.WithChannels(config.Channels...),
 		chat.WithTextLimit(config.General.CharacterLimit),
 		chat.WithTextInterval(time.Duration(config.General.MessageInterval)*time.Millisecond),

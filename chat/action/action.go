@@ -19,11 +19,10 @@ func PrivateResponse(data, media string) chat.Action {
 
 func BroadcastResponse(data, media string) chat.Action {
 	return func(channel *chat.Channel, user *chat.User, command string) error {
-		channel.Broadcast(chat.Message{
-			Sender:  user.Name,
-			Data:    data,
-			Media:   media,
-			Channel: channel.Name,
+		channel.Publish(chat.Message{
+			Sender: user.Name,
+			Data:   data,
+			Media:  media,
 		})
 		return nil
 	}
