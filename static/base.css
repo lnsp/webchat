@@ -1,5 +1,8 @@
 .message-sender {
-    border-right: 1px solid #d1d1d1;
+    border-right: 3px solid #007bff;
+}
+.message-block {
+    border-bottom: 1px solid #e2e2e2;
 }
 
 .app-body {

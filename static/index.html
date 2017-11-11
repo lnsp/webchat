@@ -11,20 +11,20 @@
 <body>
     <div class="pt-3 app-body" id="app">
         <div class="container">
-            <h1>WebChat
-                <small class="text-muted">v1.0.4</small>
-            </h1>
-            <hr>
+            <h3>WebChat
+                <small class="text-muted">v1.0.5</small>
+            </h3>
+            <hr class="m-0">
         </div>
-        <div class="container chat-history" v-cloak>
-            <div class="row message-block align-items-center" v-for="msg in messages">
+        <div class="container chat-history pt-0" v-cloak>
+            <div class="row message-block align-items-center mt-1" v-for="msg in messages">
                 <div class="message-channel col-3 col-md-2">
                     <span class="badge badge-primary">{{ msg.channel }}</span>
                 </div>
-                <div class="message-sender col-9 col-md-3 p-1" v-bind:class="['text-' + msg.priority]">
+                <div class="message-sender col-9 col-md-3" v-bind:class="['text-' + msg.priority]">
                     <b>{{ msg.sender }}</b>
                 </div>
-                <div class="message-text col p-1 pl-3">
+                <div class="message-text col pl-3 pb-2">
                     <img v-if="msg.media === 'image'" class="img-fluid" v-bind:src="msg.data">
                     <a v-else-if="msg.media === 'url'" v-bind:href="msg.data">{{ msg.data }}</a>
                     <span v-else v-bind:class="['text-' + msg.priority]">{{ msg.data }}</span>
@@ -38,7 +38,7 @@
             <form onsubmit="return send();" action="">
                 <div class="row">
                     <div class="col-md-10">
-                        <div class="form-group">
+                        <div class="form-group mb-0">
                             <input id="message" autocomplete="off" class="form-control" type="text">
                         </div>
                     </div>
