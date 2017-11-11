@@ -32,7 +32,7 @@ type User struct {
 func (user *User) Watch() {
 	logrus.WithFields(logrus.Fields{
 		"user": user.Name,
-	}).Info("Watching user input")
+	}).Debug("Watching user input")
 	var text string
 	var lastMessage time.Time
 	for {
@@ -49,14 +49,14 @@ func (user *User) Watch() {
 		logrus.WithFields(logrus.Fields{
 			"message": text,
 			"user":    user.Name,
-		}).Info("Received message from user")
+		}).Debug("Received message from user")
 		text = strings.TrimSpace(text)
 		if len(text) < 1 {
 			continue
 		}
 		command := strings.SplitN(text, " ", 2)
 		if action, ok := user.host.actions[command[0]]; ok {
-			err := action(user.active, user, command[len(command)-1])
+			err := action.Invoke(user.host, user.active, user, command[len(command)-1])
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
 					"user":    user.Name,
@@ -76,7 +76,7 @@ func (user *User) Watch() {
 	user.active.Leave(user)
 	logrus.WithFields(logrus.Fields{
 		"user": user.Name,
-	}).Info("Closing connection")
+	}).Debug("Closing connection")
 }
 
 func (user *User) Send(msg Message) error {

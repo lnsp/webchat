@@ -4,7 +4,18 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-type Action func(channel *Channel, user *User, data string) error
+type Handler func(*Server, *Channel, *User, string) error
+
+type Action struct {
+	Invoke            Handler
+	Name, Description string
+}
+
+func NewAction(name, description string, handler Handler) Action {
+	return Action{
+		handler, name, description,
+	}
+}
 
 type Channel struct {
 	Name         string
@@ -35,7 +46,7 @@ func (c *Channel) broadcast(msg Message) {
 		"channel": c.Name,
 		"sender":  msg.Sender,
 		"message": msg.Data,
-	}).Info("Broadcasting message to users")
+	}).Debug("Broadcasting message to users")
 	for _, p := range c.participants {
 		p.Send(msg)
 	}
@@ -45,7 +56,7 @@ func (c *Channel) Join(u *User) {
 	logrus.WithFields(logrus.Fields{
 		"channel": c.Name,
 		"user":    u.Name,
-	}).Info("User joined channel")
+	}).Debug("User joined channel")
 	c.participants[u.Name] = u
 	c.Publish(Message{
 		Sender:   c.host.Name,
@@ -59,7 +70,7 @@ func (c *Channel) Leave(u *User) {
 	logrus.WithFields(logrus.Fields{
 		"channel": c.Name,
 		"user":    u.Name,
-	}).Info("User left channel")
+	}).Debug("User left channel")
 	delete(c.participants, u.Name)
 	c.Publish(Message{
 		Sender:   c.host.Name,

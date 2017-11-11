@@ -39,6 +39,14 @@ type Server struct {
 	mainChannel  string
 }
 
+func (s *Server) ListActions() []Action {
+	actions := make([]Action, 0, len(s.actions))
+	for _, a := range s.actions {
+		actions = append(actions, a)
+	}
+	return actions
+}
+
 func (s *Server) List() []*User {
 	users := make(map[*User]bool)
 	for _, c := range s.channels {
@@ -65,21 +73,25 @@ func (s *Server) AddChannel(channel *Channel) {
 	s.channels[channel.Name] = channel
 }
 
-func (s *Server) AddAction(tag string, action Action) {
-	s.actions[tag] = action
+func (s *Server) AddAction(action Action) {
+	logrus.WithFields(logrus.Fields{
+		"name":        action.Name,
+		"description": action.Description,
+	}).Debug("Add action to server")
+	s.actions["!"+action.Name] = action
 }
 
 func (s *Server) Accept(conn *websocket.Conn) {
 	logrus.WithFields(logrus.Fields{
 		"remote": conn.RemoteAddr(),
 		"local":  conn.LocalAddr(),
-	}).Info("Connected with client")
+	}).Debug("Connected with client")
 
 	user := NewUser(conn, s)
 	defer user.Watch()
 	logrus.WithFields(logrus.Fields{
 		"user": user.Name,
-	}).Info("Generated new user")
+	}).Debug("Generated new user")
 
 	user.Send(Message{
 		Sender: s.Name,
@@ -106,7 +118,7 @@ func (s *Server) publish(msg Message) {
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"broker": s.broker.LocalAddr(),
-		}).Warn("Failed to open channel")
+		}).Debug("Failed to open channel")
 		return
 	}
 	defer ch.Close()
@@ -241,6 +253,9 @@ func New(options ...Option) *Server {
 	for _, opt := range options {
 		opt(server)
 	}
+	for _, act := range DefaultActions {
+		server.AddAction(act)
+	}
 	return server
 }
 
@@ -266,9 +281,9 @@ func WithMOTD(motd string) Option {
 	}
 }
 
-func WithAction(tag string, action Action) Option {
+func WithAction(action Action) Option {
 	return func(s *Server) {
-		s.actions[tag] = action
+		s.AddAction(action)
 	}
 }
 

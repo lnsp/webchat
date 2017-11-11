@@ -14,6 +14,9 @@ func main() {
 		server *chat.Server
 		err    error
 	)
+	if os.Getenv("DEBUG") != "" {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
 	if cfg := os.Getenv("CONFIG_FILE"); cfg != "" {
 		server, err = config.Build(cfg)
 		if err != nil {
