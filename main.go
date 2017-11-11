@@ -14,10 +14,7 @@ func main() {
 		server *chat.Server
 		err    error
 	)
-	if cfg := os.Getenv("CONFIG_FILE"); cfg == "" {
-		server = chat.New()
-		logrus.Info("Using default configuration")
-	} else {
+	if cfg := os.Getenv("CONFIG_FILE"); cfg != "" {
 		server, err = config.Build(cfg)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -26,6 +23,9 @@ func main() {
 			}).Fatal("Could not build server from configuration")
 		}
 		logrus.WithField("config", cfg).Info("Using configuration file")
+	} else {
+		server = chat.New()
+		logrus.Info("Using default configuration")
 	}
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/chat/", server.Handler())
