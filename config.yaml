@@ -1,0 +1,34 @@
+general:
+  motd: "Welcome to WebChat. Use !help for further information."
+  characterLimit: 140
+  messageInterval: 50
+channels: [main]
+actions:
+  - tag: vollgas
+    type: broadcast
+    media: image
+    data: http://www.bayerische-spezialitaeten.net/bilder/leberkaese.jpg 
+    middleware:
+      limit:
+        interval: 60
+        message: "Too much Vollgas, too much Leberkas."
+  - tag: tumbwl
+    type: broadcast
+    media: image
+    data: https://user-images.githubusercontent.com/3391295/32673053-cd92abf6-c64d-11e7-9172-e11a9c3c5343.jpg
+    middleware:
+      limit:
+        interval: 30
+        message: "Congratulations, you made it."
+  - tag: showme
+    type: broadcast
+    media: image
+    data: https://media.giphy.com/media/26DOs997h6fgsCthu/giphy.gif
+    middleware:
+      limit:
+        interval: 15
+        message: "Oh jeez, Rick."
+  - tag: repo
+    type: private
+    media: url
+    data: https://github.com/lnsp/webchat
