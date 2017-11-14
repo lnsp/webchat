@@ -1,1 +1,4 @@
 language: go
+before_install:
+- openssl aes-256-cbc -K $encrypted_0ccecc354d41_key -iv $encrypted_0ccecc354d41_iv
+  -in dokku-deployment.key.enc -out dokku-deployment.key -d
