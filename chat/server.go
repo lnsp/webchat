@@ -29,14 +29,15 @@ const (
 )
 
 type Server struct {
-	Name         string
-	motd         string
-	channels     map[string]*Channel
-	textInterval time.Duration
-	textLimit    int
-	actions      map[string]Action
-	broker       *amqp.Connection
-	mainChannel  string
+	Name               string
+	motd               string
+	channels           map[string]*Channel
+	textInterval       time.Duration
+	textLimit          int
+	actions            map[string]Action
+	broker             *amqp.Connection
+	defaultUserChannel string
+	activeChannel      *amqp.Channel
 }
 
 func (s *Server) ListActions() []Action {
@@ -99,9 +100,9 @@ func (s *Server) Accept(conn *websocket.Conn) {
 	})
 	if len(s.channels) < 1 {
 		s.AddChannel(NewChannel(defaultChannelName, s))
-		s.mainChannel = defaultChannelName
+		s.defaultUserChannel = defaultChannelName
 	}
-	main := s.channels[s.mainChannel]
+	main := s.channels[s.defaultUserChannel]
 	user.active = main
 	main.Join(user)
 }
@@ -114,14 +115,6 @@ func (s *Server) Handler() http.Handler {
 }
 
 func (s *Server) publish(msg Message) {
-	ch, err := s.broker.Channel()
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"broker": s.broker.LocalAddr(),
-		}).Debug("Failed to open channel")
-		return
-	}
-	defer ch.Close()
 	bytes, err := json.Marshal(msg)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -130,7 +123,7 @@ func (s *Server) publish(msg Message) {
 		}).Warn("Could not marshal message")
 		return
 	}
-	if err := ch.Publish(exchangeName, queueWildcard, false, false, amqp.Publishing{
+	if err := s.activeChannel.Publish(exchangeName, queueWildcard, false, false, amqp.Publishing{
 		ContentType: "application/json",
 		Body:        bytes,
 	}); err != nil {
@@ -154,6 +147,7 @@ func (s *Server) route(msg Message) {
 }
 
 func (s *Server) consumeLoop() {
+	var err error
 	host, err := os.Hostname()
 	if err != nil {
 		// generate random bytes instead
@@ -163,7 +157,7 @@ func (s *Server) consumeLoop() {
 		host = hex.EncodeToString(randBytes[:])
 	}
 
-	ch, err := s.broker.Channel()
+	s.activeChannel, err = s.broker.Channel()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err":    err,
@@ -171,7 +165,7 @@ func (s *Server) consumeLoop() {
 		}).Fatal("Could not open channel")
 	}
 
-	if err := ch.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil); err != nil {
+	if err := s.activeChannel.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"exchange": exchangeName,
 			"err":      err,
@@ -181,7 +175,7 @@ func (s *Server) consumeLoop() {
 		"exchange": exchangeName,
 	}).Info("Declared chat exchange")
 
-	queue, err := ch.QueueDeclare(queuePrefix+host, false, false, false, false, nil)
+	queue, err := s.activeChannel.QueueDeclare(queuePrefix+host, false, false, false, false, nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err":    err,
@@ -193,7 +187,7 @@ func (s *Server) consumeLoop() {
 		"queue": queue.Name,
 	}).Info("Declared public queue")
 
-	if err := ch.QueueBind(queue.Name, queueWildcard, exchangeName, false, nil); err != nil {
+	if err := s.activeChannel.QueueBind(queue.Name, queueWildcard, exchangeName, false, nil); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err":    err,
 			"broker": s.broker.LocalAddr(),
@@ -202,10 +196,10 @@ func (s *Server) consumeLoop() {
 	}
 
 	for {
-		incoming, err := ch.Consume(queue.Name, "", true, false, false, false, nil)
+		incoming, err := s.activeChannel.Consume(queue.Name, "", true, false, false, false, nil)
 		if err != nil {
-			ch.Close()
-			ch, err = s.broker.Channel()
+			s.activeChannel.Close()
+			s.activeChannel, err = s.broker.Channel()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
 					"err":    err,
@@ -301,6 +295,6 @@ func WithTextInterval(interval time.Duration) Option {
 
 func WithMainChannel(name string) Option {
 	return func(s *Server) {
-		s.mainChannel = name
+		s.defaultUserChannel = name
 	}
 }
