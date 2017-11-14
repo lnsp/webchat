@@ -7,6 +7,6 @@ after_success:
 - chmod 600 .travis/dokku-deployment.key
 - ssh-add .travis/dokku-deployment.key
 - ssh-keyscan apps.espe.tech >> ~/.ssh/known_hosts
-- git remote add dokku dokku@apps.espe.tech
+- git remote add dokku dokku@apps.espe.tech:chat
 - git config --global push.default simple
 - git push dokku master
