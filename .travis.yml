@@ -1,7 +1,7 @@
 language: go
 before_install:
 - openssl aes-256-cbc -K $encrypted_0ccecc354d41_key -iv $encrypted_0ccecc354d41_iv
-  -in dokku-deployment.key.enc -out dokku-deployment.key -d
+  -in .travis/dokku-deployment.key.enc -out .travis/dokku-deployment.key -d
 after_success:
 - eval $(ssh-agent -s)
 - chmod 600 .travis/dokku-deployment.key
